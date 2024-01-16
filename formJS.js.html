@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: formJS.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: formJS.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>// Global variables for DOM elements
+const loginContainer = document.getElementById("login-container");
+const formularioContainer = document.getElementById("formulario-container");
+const salirbtn = document.getElementById("salirbtn");
+
+const telefonoJs = document.getElementById("telefono");
+const GrupoJs = document.getElementById("GrupoJs");
+const TipoJs = document.getElementById("TipoJs");
+const SubtipoJs = document.getElementById("SubtipoJs");
+const NombreJs = document.getElementById("Nombre");
+const documentoTipoJs = document.getElementById("documentoTipo");
+const documentoNumeroJs = document.getElementById("documentoNumero");
+const descripcionJs = document.getElementById("Descripcion");
+const enviarBtn = document.getElementById("enviarBtn");
+
+const nameUserTodo = document.getElementById("nameUserTodo");
+const nameUser = document.getElementById("nameUser");
+const username = document.getElementById("username");
+const password = document.getElementById("password");
+let loginCheck = false;
+const soloLetras = /^[A-Za-zñÑ\s]*$/;
+const soloNumeros = /^\d*$/;
+
+const url = "https://servidordelvus.azurewebsites.net/form/form-vus.php";
+const urlmanager = window.location.href;
+
+let valueTipoanterior = "";
+let valueSubtipoanterior = "";
+
+const opcionesGrupo = {
+    'TRAMITES': ["AUTOMOTORES (RDA)", "CONDUCTORES (RDC)", "TARJETA DE OPERACIÓN (RTO)"],
+    'CONSULTAS': ["CERTIFICACIONES", "ESTADO DE TRAMITES", "ACTUALIZACION DE DATOS"],
+    'VALIDACIONES': ["CITAS", "SEDES", "TICKET Y/O D. PETICION"],
+    'NO EFECTIVA': ["SIN CONTACTO"]
+};
+
+const opcionesTipo = {
+
+    "AUTOMOTORES (RDA)": ["TRASPASO DE PROPIEDAD",
+        "TRASPASO DE PROPIEDAD A PERSONA INDETERMINADA",
+        "MATRICULA",
+        "CAMBIO DE SERVICIO",
+        "CERTIFICADO DE LIBERTAD Y TRADICION",
+        "CAMBIO DE PLACA",
+        "DUPLICADO DE PLACA",
+        "DUPLICADO DE LICENCIA DE CONDUCCION DE TRANSITO",
+        "INSCRIPCION, LEVANTAMIENTO O MODIFICACION DE PRENDA",
+        "REMATRICULA",
+        "CANCELACION DE MATRICULA",
+        "CAMBIO DE CARACTERISTICAS",
+        "BLINDAJE , DESMONTE DE BLINDAJE",
+        "CAMBIO DE COLOR",
+        "CAMBIO DE MOTOR",
+        "REGRABACION DE MOTOR, VIN, SERIAL O CHASIS",
+        "TRASLADO DE MATRICULA",
+        "RADICACION DE LA MATRICULA",
+        "INFORMACION SALIDA DE PATIOS"],
+
+    "CONDUCTORES (RDC)": ["INSCRIPCIÓN Y VALIDACION RUNT","EXPEDICION DE LICENCIA DE CONDUCCION",
+        "CAMBIO DE LICENCIA DE CONDUCCION POR MAYORIA DE EDAD",
+        "RECATEGORIZACION DE LA LICENCIA DE CONDUCCION",
+        "DUPLICADO DE LICENCIA DE CONDUCCION",
+        "RENOVACION DE LA LICENCIA DE CONDUCCION",
+        "IMPUGNACIÓN DE COMPARENDOS",
+        "CURSOS PEDAGOCICOS"],
+
+    "TARJETA DE OPERACIÓN (RTO)": ["EXPEDICION DE LA TARJETA DE OPERACIÓN",
+        "DUPLICADO DE LA TARJETA DE OPERACIÓN",
+        "RENOVACION D ELA TARJETA DE OPERACIÓN",
+        "CANCELACION DE LA TARJETA",
+        "CAMBIO DE EMPRESA"],
+
+    "CERTIFICACIONES": ["TRADICION Y LIBERTAD",
+        "RETENCION EN LA FUENTE"],
+
+    "ESTADO DE TRAMITES": ["ESTADO DE LICENCIA",
+        "ESTADO DEL VEHICULO",
+        "ESTADO EN MULTAS Y/O COMPARENDOS",
+        "ESTADO DE OTROS TRAMITES (IMPUESTOS)"],
+
+    "ACTUALIZACION DE DATOS": ["ACTUALIZACION EXITOSA",
+        "ERROR AL ACTUALIZAR"],
+
+    "CITAS": ["CONSULTA DE CITA",
+        "ERROR AL AGENDAR"],
+
+    "SEDES": ["INFORMACION SEDES VUS",
+        "INFORMACION SEDES OT"],
+
+    "TICKET Y/O D. PETICION": ["EN PROCESO",
+        "CERRADO"],
+
+    "SIN CONTACTO": ["NO CONTESTA",
+        "CUELGA"]
+};
+
+// Initial display state for login and form containers
+loginContainer.style.display = "block";
+formularioContainer.style.display = "none";
+
+// Adding event listeners for select elements and input elements
+GrupoJs.addEventListener("change", verificarCamposLlenos);
+TipoJs.addEventListener("change", verificarCamposLlenos);
+SubtipoJs.addEventListener("change", verificarCamposLlenos);
+NombreJs.addEventListener("change", condicionNombre);
+documentoTipoJs.addEventListener("change", verificarCamposLlenos);
+documentoNumeroJs.addEventListener("change", condicionDocumento);
+
+/**
+ * A function to obtain the value of a parameter from a URL.
+ *
+ * @param {string} nombreParametro - The name of the parameter to obtain the value of.
+ * @param {string} url - The URL from which to obtain the parameter value.
+ * @return {string | null} - The value of the parameter, or null if the parameter is not found in the URL.
+ */
+function obtenerValorParametro(nombreParametro, url) {
+    const parametros = new URL(url).searchParams;
+    return parametros.get(nombreParametro);
+}
+
+let ani = obtenerValorParametro("ani", urlmanager) ?? "Anonymous";
+const dnis = obtenerValorParametro("dnis", urlmanager) ?? "1";
+const id_customer = obtenerValorParametro("id_customer", urlmanager) ?? "1";
+const id_call = obtenerValorParametro("id_call", urlmanager) ?? "1";
+const webrtc = obtenerValorParametro("webrtc", urlmanager) ?? "1";
+
+
+if (ani !== "Anonymous") {
+    telefonoJs.setAttribute("disabled", "disabled");
+  } else {
+    telefonoJs.removeAttribute("disabled");
+  }
+
+/**
+ * Sets a cookie with the specified name, value, and expiration days.
+ *
+ * @param {string} name - The name of the cookie.
+ * @param {string} value - The value of the cookie.
+ * @param {number} days - The number of days until the cookie expires.
+ */
+function setCookie(name, value, days) {
+    const date = new Date();
+    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+    const expires = "expires=" + date.toUTCString();
+    document.cookie = name + "=" + value + ";" + expires + ";path=/";
+}
+
+
+/**
+ * Retrieves the value of a cookie by name.
+ *
+ * @param {string} name - The name of the cookie.
+ * @return {string} The value of the cookie, or an empty string if the cookie is not found.
+ */
+function getCookie(name) {
+    const decodedCookie = decodeURIComponent(document.cookie);
+    const cookies = decodedCookie.split(';');
+    for (let i = 0; i &lt; cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.indexOf(name + "=") === 0) {
+            return cookie.substring(name.length + 1);
+        }
+    }
+    return "";
+}
+
+
+/**
+ * Checks the login status of the user.
+ *
+ * @return {undefined} Does not return a value.
+ */
+function checkLoginStatus() {
+    const loggedIn = getCookie("loggedIn");
+    if (loggedIn === "true") {
+
+        loginContainer.style.display = "none"; // Muestra el contenedor de inicio de sesión
+        formularioContainer.style.display = "block"; // Oculta el contenedor de formulario
+        salirbtn.style.display = "block";
+        enviarBtn.disabled = true;
+        nameUser.innerHTML = getCookie("username");
+        nameUserTodo.style.display = "block";
+        telefonoJs.placeholder = ani;
+
+        // El usuario ha iniciado sesión previamente, realiza las acciones necesarias
+        console.log("El usuario ha iniciado sesión.");
+    } else {
+        // El usuario no ha iniciado sesión previamente, puedes redirigirlo a la página de inicio de sesión
+        console.log("El usuario no ha iniciado sesión.");
+        loginContainer.style.display = "block"; // Muestra el contenedor de inicio de sesión
+        formularioContainer.style.display = "none"; // Oculta el contenedor de formulario
+        salirbtn.style.display = "none";
+
+        nameUserTodo.style.display = "none";
+
+    }
+}
+
+/**
+ * Performs a login operation.
+ *
+ * @return {undefined} The function does not return a value.
+ */
+function login() {
+    const data = new FormData();
+    data.append("username", username.value);
+    data.append("password", password.value);
+
+    fetch(url, {
+        method: "POST",
+        body: data
+    })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                throw new Error("Error en la solicitud");
+            }
+        })
+        .then(data => {
+            if (data.message === "Credenciales válidas") {
+                // Las credenciales son válidas, oculta el contenedor de inicio de sesión y muestra el formulario.
+                loginContainer.style.display = "none";
+                nameUser.innerHTML = data.nameCreated;
+                formularioContainer.style.display = "block";
+                salirbtn.style.display = "block";
+                loginCheck = data.loggedIn;
+                nameUserTodo.style.display = "Block";
+                enviarBtn.disabled = true;
+                telefonoJs.placeholder = ani;
+                setCookie("username", data.nameCreated, 1);
+                setCookie("loggedIn", "true", 1); // La cookie expira en 1 día
+                setCookie("docName", username.value, 1);
+                console.log("Usuario autenticado y cookie establecida.");
+            } else {
+                // Las credenciales son inválidas, muestra una alerta.
+                alert("Credenciales inválidas");
+            }
+        })
+        .catch(error => {
+            console.error("Error en la solicitud:", error);
+            alert("Hubo un error en la solicitud. Por favor, inténtalo de nuevo más tarde.");
+        });
+}
+
+
+
+/**
+ * Verifies if all the required fields are filled.
+ *
+ * @return {boolean} True if all the required fields are filled, false otherwise.
+ */
+function verificarCamposLlenos() {
+
+    TipoJs.value === undefined ? TipoJs.value = "Tipo" : TipoJs.value;
+    SubtipoJs.value === undefined ? SubtipoJs.value = "Subtipo" : SubtipoJs.value;
+
+    const camposLlenos =
+        GrupoJs.value !== "Grupos" &amp;&amp;
+        TipoJs.value !== "Tipo" &amp;&amp; opcionesGrupo[GrupoJs.value].includes(TipoJs.value) &amp;&amp; opcionesTipo[TipoJs.value].includes(SubtipoJs.value) &amp;&amp;
+        SubtipoJs.value !== "Subtipo" &amp;&amp;
+        NombreJs.value !== "" &amp;&amp;
+        documentoTipoJs.value !== "" &amp;&amp;
+        documentoNumeroJs.value !== "";
+
+    enviarBtn.disabled = !camposLlenos;
+
+
+    opcionesForm();
+}
+
+/**
+ * Validates the input in the NombreJs field and replaces any non-alphabetic characters with an empty string. 
+ * Displays an alert message if any non-alphabetic characters are found. Calls the verificarCamposLlenos function.
+ *
+ * @param {type} NombreJs - the input field to be validated
+ * @return {type} undefined
+ */
+function condicionNombre() {
+    if (!soloLetras.test(NombreJs.value)) {
+        NombreJs.value = NombreJs.value.replace(/[^A-Za-zñÑ\s]/g, "");
+        alert("Solo se permiten letras, espacios y la letra 'ñ'. Se cambiaron los caracteres no permitidos.");
+    }
+    verificarCamposLlenos();
+}
+
+/**
+ * Validates the document number input field and displays an alert if the value contains non-numeric characters.
+ *
+ * @param {RegExp} soloNumeros - The regular expression used to test if the document number input contains non-numeric characters.
+ * @param {HTMLInputElement} documentoNumeroJs - The input element for the document number.
+ * @return {undefined} This function does not return a value.
+ */
+function condicionDocumento() {
+    if (!soloNumeros.test(documentoNumeroJs.value)) {
+        documentoNumeroJs.value = documentoNumeroJs.value.replace(/\D/g, "");
+        alert("Solo se permiten Numeros, se cambiaron los caracteres !");
+    }
+    verificarCamposLlenos()
+}
+
+/**
+ * Fills a dropdown with options and selects a specific value, if provided.
+ *
+ * @param {HTMLElement} dropdown - The dropdown element to be filled.
+ * @param {Array} opciones - An array of options to populate the dropdown.
+ * @param {string} valorSeleccionado - The value of the option to be selected.
+ */
+function llenarDropdown(dropdown, opciones, valorSeleccionado) {
+    dropdown.innerHTML = '';
+
+    const opcionPorDefecto = document.createElement("option");
+    opcionPorDefecto.value = "";
+    opcionPorDefecto.textContent = "Selecciona una opción";
+    dropdown.appendChild(opcionPorDefecto);
+
+    if (opciones) {
+        opciones.forEach(elemento => {
+            const opcion = document.createElement("option");
+            opcion.value = elemento;
+            opcion.textContent = elemento;
+            dropdown.appendChild(opcion);
+        });
+        dropdown.removeAttribute("disabled");
+
+    } else {
+        dropdown.setAttribute("disabled", true);
+
+    }
+
+    if (opciones &amp;&amp; opciones.includes(valorSeleccionado)) {
+        dropdown.value = valorSeleccionado;
+    }
+}
+
+/**
+ * Generates the function comment for the given function body in a markdown code block with the correct language syntax.
+ *
+ * @return {undefined} The generated function comment.
+ */
+function opcionesForm() {
+
+
+    const elementoTipo = opcionesGrupo[GrupoJs.value];
+
+    const valorTipoActual = TipoJs.value;
+
+    llenarDropdown(TipoJs, elementoTipo, valueTipoanterior);
+
+    const elementoSubtipo = opcionesTipo[valorTipoActual];
+
+    const valorSubtipoActual = SubtipoJs.value;
+
+
+    llenarDropdown(SubtipoJs, elementoSubtipo, valueSubtipoanterior);
+
+    if (elementoTipo) {
+        SubtipoJs.removeAttribute("disabled");
+    }
+
+
+    if (valorTipoActual &amp;&amp; elementoTipo &amp;&amp; elementoTipo.includes(valorTipoActual)) {
+        TipoJs.value = valorTipoActual;
+    }
+
+    if (valorSubtipoActual &amp;&amp; elementoSubtipo &amp;&amp; elementoSubtipo.includes(valorSubtipoActual)) {
+        SubtipoJs.value = valorSubtipoActual;
+    }
+}
+
+/**
+ * Sends the form data to the server asynchronously.
+ *
+ * @return {Promise} A Promise that resolves when the form data is successfully sent.
+ */
+async function enviarFormulario() {
+
+    document.getElementById("spinner").style.display = "block";
+    document.getElementById("BotonModal").style.display = "none";
+    document.getElementById("MensajeModal").style.display = "none";
+
+    if (ani === "1") {
+        ani = telefonoJs.value
+    }
+
+    if (!GrupoJs.value || GrupoJs.value == "Grupos" || !TipoJs.value || TipoJs.value == "Tipo" || !SubtipoJs.value || SubtipoJs.value == "Subtipo" || !NombreJs.value || NombreJs.value == "Nombre" || !documentoTipoJs.value || documentoTipoJs.value == "TipoDoc" || documentoNumeroJs.value == "Numero Documento" || !documentoNumeroJs.value) {
+        alert("Todos los campos son obligatorios");
+        return;
+    } else {
+
+        const data2 = new FormData();
+        data2.append("loginCheck", loginCheck);
+        data2.append("Creador", nameUser.textContent);
+        data2.append("Doc_Creador", getCookie("docName"));
+        data2.append("Grupo", GrupoJs.value,);
+        data2.append("Tipo", TipoJs.value);
+        data2.append("Subtipo", SubtipoJs.value);
+        data2.append("Nombre", NombreJs.value);
+        data2.append("Tipo_Documento", documentoTipoJs.value);
+        data2.append("Numero_Documento", documentoNumeroJs.value);
+        data2.append("Descripcion", descripcionJs.value);
+        data2.append("ani", ani);
+        data2.append("dnis", dnis);
+        data2.append("id_customer", id_customer);
+        data2.append("id_call", id_call);
+        data2.append("webrtc", webrtc);
+
+        fetch(url, {
+            method: "POST",
+            body: data2
+        })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error("Error en la solicitud");
+                }
+            })
+            .then(data => {
+                setTimeout(function () {
+                    document.getElementById("MensajeModal").textContent = "formulario con todos los datos enviado correctamente\n" + "wolkvox_id: " + data.data.wolkvox_id;
+                    document.getElementById("spinner").style.display = "none";
+                    document.getElementById("BotonModal").style.display = "block";
+                    document.getElementById("MensajeModal").style.display = "block";
+                    console.log(data);
+                }, 500);
+
+            })
+            .catch(error => {
+                console.error("Error en la solicitud:", error);
+            });
+
+    }
+}
+
+/**
+ * Clears the values of several input fields and hides the "exito" element. 
+ * Displays the "formulario-container" element.
+ *
+ * @param {type} None
+ * @return {type} None
+ */
+function abrirOtroFormulario() {
+    SubtipoJs.value = "";
+    NombreJs.value = "";
+    documentoNumeroJs.value = "";
+    documentoTipoJs.value = "";
+    GrupoJs.value = "";
+    TipoJs.value = "";
+    descripcionJs.value = "";
+    document.getElementById("exito").style.display = "none";
+    document.getElementById("formulario-container").style.display = "block";
+}
+
+/**
+ * Closes the session by resetting the login state and removing the
+ * necessary cookies. It also hides certain elements from the UI.
+ *
+ * @param {type} paramName - description of parameter
+ * @return {type} description of return value
+ */
+function cerrarSesion() {
+    loginCheck = false;
+    setCookie("loggedIn", "false", -1);
+    setCookie("username", "", -1);
+    setCookie("docName", "", -1);
+    loginContainer.style.display = "block";
+    formularioContainer.style.display = "none";
+    salirbtn.style.display = "none";
+    nameUserTodo.style.display = "none";
+}
+
+checkLoginStatus()
+
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#abrirOtroFormulario">abrirOtroFormulario</a></li><li><a href="global.html#cerrarSesion">cerrarSesion</a></li><li><a href="global.html#checkLoginStatus">checkLoginStatus</a></li><li><a href="global.html#condicionDocumento">condicionDocumento</a></li><li><a href="global.html#condicionNombre">condicionNombre</a></li><li><a href="global.html#enviarFormulario">enviarFormulario</a></li><li><a href="global.html#getCookie">getCookie</a></li><li><a href="global.html#llenarDropdown">llenarDropdown</a></li><li><a href="global.html#login">login</a></li><li><a href="global.html#obtenerValorParametro">obtenerValorParametro</a></li><li><a href="global.html#opcionesForm">opcionesForm</a></li><li><a href="global.html#setCookie">setCookie</a></li><li><a href="global.html#verificarCamposLlenos">verificarCamposLlenos</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Tue Jan 16 2024 12:30:06 GMT-0500 (hora estándar de Colombia)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
